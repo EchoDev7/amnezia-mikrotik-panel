@@ -1,7 +1,7 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:alpine AS builder
 
 # Install build dependencies
-RUN apk add --no-cache git make gcc musl-dev linux-headers
+RUN apk add --no-cache git make gcc musl-dev linux-headers bash
 
 WORKDIR /build
 
@@ -9,14 +9,13 @@ WORKDIR /build
 RUN git clone https://github.com/amnezia-vpn/amneziawg-go.git && \
     cd amneziawg-go && \
     make && \
-    cp amneziawg-go /usr/bin/
+    make install
 
 # Build amneziawg-tools (awg, awg-quick)
 RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git && \
     cd amneziawg-tools/src && \
     make && \
-    cp awg /usr/bin/ && \
-    cp awg-quick /usr/bin/
+    make install
 
 # Build Web Panel
 WORKDIR /app
