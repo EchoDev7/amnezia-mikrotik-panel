@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AmneziaWG Mikrotik Panel</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            900: '#134e4a',
+                        },
+                        dark: {
+                            bg: '#0f172a',
+                            card: '#1e293b',
+                            border: '#334155',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+        .micro-bounce {
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .micro-bounce:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="text-slate-300 font-sans antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-500 to-blue-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4"></path></svg>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-white">AmneziaWG <span class="text-brand-500">Panel</span></span>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="downloadBackup()" class="micro-bounce px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center gap-2 rounded-lg hover:bg-slate-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        Backup
+                    </button>
+                    <button onclick="document.getElementById('restoreModal').classList.remove('hidden')" class="micro-bounce px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors flex items-center gap-2 rounded-lg hover:bg-slate-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Restore
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in">
+        
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass rounded-2xl p-6 border-l-4 border-l-blue-500 micro-bounce">
+                <p class="text-sm font-medium text-slate-400">Total Peers</p>
+                <p class="mt-2 text-3xl font-bold text-white" id="stat-total">0</p>
+            </div>
+            <div class="glass rounded-2xl p-6 border-l-4 border-l-brand-500 micro-bounce">
+                <p class="text-sm font-medium text-slate-400">Active</p>
+                <p class="mt-2 text-3xl font-bold text-brand-500" id="stat-active">0</p>
+            </div>
+            <div class="glass rounded-2xl p-6 border-l-4 border-l-orange-500 micro-bounce">
+                <p class="text-sm font-medium text-slate-400">Limited / Expired</p>
+                <p class="mt-2 text-3xl font-bold text-orange-500"><span id="stat-limited">0</span> / <span id="stat-expired">0</span></p>
+            </div>
+            <div class="glass rounded-2xl p-6 border-l-4 border-l-purple-500 micro-bounce">
+                <p class="text-sm font-medium text-slate-400">Total Traffic</p>
+                <p class="mt-2 text-3xl font-bold text-white" id="stat-traffic">0 B</p>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-white tracking-tight">Manage Peers</h2>
+            <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="micro-bounce bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-brand-500/25 flex items-center gap-2 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add Peer
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="glass rounded-2xl overflow-hidden shadow-2xl animate-slide-up">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-800/50 text-slate-300 text-sm uppercase tracking-wider">
+                            <th class="px-6 py-4 font-medium">Name</th>
+                            <th class="px-6 py-4 font-medium">Allowed IPs</th>
+                            <th class="px-6 py-4 font-medium">Status</th>
+                            <th class="px-6 py-4 font-medium">Traffic (Rx+Tx)</th>
+                            <th class="px-6 py-4 font-medium text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="peers-tbody" class="divide-y divide-slate-700/50">
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="hidden fixed inset-0 z-[100] overflow-y-auto">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('addModal').classList.add('hidden')"></div>
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="glass relative bg-slate-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:max-w-2xl w-full border border-slate-700">
+                <div class="px-6 py-6 border-b border-slate-800 flex justify-between items-center">
+                    <h3 class="text-xl leading-6 font-semibold text-white">Create New Peer (AWG 3.1)</h3>
+                    <button onclick="document.getElementById('addModal').classList.add('hidden')" class="text-slate-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="px-6 py-6">
+                    <form id="addForm" class="space-y-5">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-1">Name</label>
+                                <input type="text" id="name" required class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="e.g. John's iPhone">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-1">Allowed IPs</label>
+                                <input type="text" id="allowed_ips" required class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="10.8.0.2/32">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-1">Data Limit (Bytes)</label>
+                                <input type="number" id="data_limit_bytes" value="0" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                                <p class="text-xs text-slate-500 mt-1">0 for unlimited</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-400 mb-1">Expiration Date</label>
+                                <input type="datetime-local" id="expires_at" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all">
+                                <p class="text-xs text-slate-500 mt-1">Leave empty for no expiry</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-800">
+                            <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">AmneziaWG Obfuscation (v3.1)</h4>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Jc</label>
+                                    <input type="number" id="jc" value="4" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Jmin</label>
+                                    <input type="number" id="jmin" value="50" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">Jmax</label>
+                                    <input type="number" id="jmax" value="1000" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">S1</label>
+                                    <input type="number" id="s1" value="0" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">S2</label>
+                                    <input type="number" id="s2" value="0" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1">H1-H4</label>
+                                    <input type="number" id="h1" value="1" class="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="H1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-800">
+                            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors">Cancel</button>
+                            <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-brand-500/20 transition-colors">Create Peer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Modal -->
+    <div id="restoreModal" class="hidden fixed inset-0 z-[100] overflow-y-auto">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('restoreModal').classList.add('hidden')"></div>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="glass relative bg-slate-900 rounded-2xl p-6 text-center shadow-2xl transform transition-all w-full max-w-md border border-slate-700">
+                <svg class="mx-auto h-12 w-12 text-brand-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <h3 class="text-xl font-semibold text-white mb-2">Restore Database</h3>
+                <p class="text-sm text-slate-400 mb-6">Upload a previously downloaded panel.db backup file. This will overwrite current data.</p>
+                <form id="restoreForm">
+                    <input type="file" id="backupFile" accept=".db" class="block w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20 transition-colors mb-6">
+                    <div class="flex justify-center gap-3">
+                        <button type="button" onclick="document.getElementById('restoreModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 transition-colors">Cancel</button>
+                        <button type="submit" class="bg-brand-600 hover:bg-brand-500 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg transition-colors">Upload & Restore</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div id="qrModal" class="hidden fixed inset-0 z-[100] overflow-y-auto">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('qrModal').classList.add('hidden')"></div>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="glass relative bg-slate-900 rounded-2xl p-6 text-center shadow-2xl transform transition-all w-full max-w-sm border border-slate-700">
+                <h3 class="text-xl font-semibold text-white mb-4">Scan QR Code</h3>
+                <div class="bg-white p-4 rounded-xl inline-block mb-4 shadow-inner">
+                    <img id="qrImage" src="" alt="QR Code" class="w-48 h-48">
+                </div>
+                <p class="text-sm text-slate-400 mb-6">Scan this with the AmneziaWG mobile app.</p>
+                <button type="button" onclick="document.getElementById('qrModal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-white px-6 py-2.5 rounded-xl font-medium transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function getStatusBadge(status) {
+            const styles = {
+                'active': 'bg-brand-500/10 text-brand-400 border-brand-500/20',
+                'expired': 'bg-red-500/10 text-red-400 border-red-500/20',
+                'limited': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
+                'disabled': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+            };
+            const cls = styles[status] || styles['disabled'];
+            return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${cls} capitalize">${status}</span>`;
+        }
+
+        async function loadDashboard() {
+            try {
+                const statsRes = await fetch('/api/stats');
+                const stats = await statsRes.json();
+                document.getElementById('stat-total').innerText = stats.total_users;
+                document.getElementById('stat-active').innerText = stats.active_users;
+                document.getElementById('stat-limited').innerText = stats.limited_users;
+                document.getElementById('stat-expired').innerText = stats.expired_users;
+                document.getElementById('stat-traffic').innerText = formatBytes(stats.total_bytes);
+
+                const usersRes = await fetch('/api/users');
+                const users = await usersRes.json();
+                
+                const tbody = document.getElementById('peers-tbody');
+                tbody.innerHTML = '';
+                if(users && users.length > 0) {
+                    users.forEach(u => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-800/30 transition-colors group';
+                        
+                        let usage = formatBytes(u.TotalBytes);
+                        if(u.DataLimitBytes > 0) usage += ` / ${formatBytes(u.DataLimitBytes)}`;
+
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-white">${u.Name}</div>
+                                <div class="text-xs text-slate-500 font-mono mt-0.5 truncate max-w-[150px]" title="${u.PublicKey}">${u.PublicKey}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono">${u.AllowedIPs}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${getStatusBadge(u.Status)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">${usage}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="showQR('${u.ID}')" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors" title="QR Code">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                                    </button>
+                                    <a href="/api/users/export/${u.ID}/conf" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors" title="Download .conf">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                    </a>
+                                    <button onclick="toggleUser('${u.ID}')" class="p-1.5 text-slate-400 hover:text-brand-400 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors" title="Toggle Access">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9V5a2 2 0 012-2h0a2 2 0 012 2v4m-6 0h6m-6 0v4m6-4v4"></path></svg>
+                                    </button>
+                                    <button onclick="deleteUser('${u.ID}')" class="p-1.5 text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors" title="Delete">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-slate-500 text-sm">No peers found. Create one to get started.</td></tr>`;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        document.getElementById('addForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('name').value,
+                allowed_ips: document.getElementById('allowed_ips').value,
+                data_limit_bytes: parseInt(document.getElementById('data_limit_bytes').value),
+                jc: parseInt(document.getElementById('jc').value),
+                jmin: parseInt(document.getElementById('jmin').value),
+                jmax: parseInt(document.getElementById('jmax').value),
+                s1: parseInt(document.getElementById('s1').value),
+                s2: parseInt(document.getElementById('s2').value),
+                s3: 0, s4: 0,
+                h1: parseInt(document.getElementById('h1').value),
+                h2: 2, h3: 3, h4: 4,
+            };
+            
+            const exp = document.getElementById('expires_at').value;
+            if(exp) {
+                payload.expires_at = new Date(exp).toISOString();
+            }
+
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+
+            if(res.ok) {
+                document.getElementById('addModal').classList.add('hidden');
+                document.getElementById('addForm').reset();
+                loadDashboard();
+            } else {
+                alert('Failed to create peer: ' + await res.text());
+            }
+        });
+
+        async function deleteUser(id) {
+            if(confirm("Are you sure you want to delete this peer?")) {
+                await fetch(`/api/users/${id}`, { method: 'DELETE' });
+                loadDashboard();
+            }
+        }
+
+        async function toggleUser(id) {
+            await fetch(`/api/users/toggle/${id}`, { method: 'POST' });
+            loadDashboard();
+        }
+
+        function showQR(id) {
+            document.getElementById('qrImage').src = `/api/users/export/${id}/qr`;
+            document.getElementById('qrModal').classList.remove('hidden');
+        }
+
+        function downloadBackup() {
+            window.location.href = '/api/backup';
+        }
+
+        document.getElementById('restoreForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('backupFile').files[0];
+            if(!file) return;
+
+            const formData = new FormData();
+            formData.append('backup', file);
+
+            const res = await fetch('/api/restore', {
+                method: 'POST',
+                body: formData
+            });
+
+            if(res.ok) {
+                alert('Database restored successfully! Refreshing...');
+                location.reload();
+            } else {
+                alert('Restore failed: ' + await res.text());
+            }
+        });
+
+        // Init
+        loadDashboard();
+        setInterval(loadDashboard, 15000); // Auto refresh every 15s
+    </script>
+</body>
+</html>
