@@ -20,14 +20,14 @@ RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git && \
 # Build Web Panel
 WORKDIR /app
 
-# Copy go.mod first to leverage Docker layer caching for dependency downloads
+# Copy go.mod first
 COPY go.mod ./
 
-# Download all declared dependencies (go.mod now has full require block)
-RUN go mod download
-
-# Copy full source code
+# Copy full source code so go mod tidy can inspect imports
 COPY . .
+
+# Tidy and download all dependencies inside the container to ensure go.sum is synced
+RUN go mod tidy && go mod download
 
 # Compile Go app with CGO disabled (pure Go SQLite driver)
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o panel .
