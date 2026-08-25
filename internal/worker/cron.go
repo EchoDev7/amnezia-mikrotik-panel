@@ -77,13 +77,16 @@ func processBandwidthAndLimits() error {
 		}
 
 		if currRxTx < user.SessionStartRxTx {
-			// Reboot/interface reset happened
-			user.SessionStartRxTx = 0
+			// Reboot / interface reset detected: counters were reset to 0.
+			// The delta for this period is simply currRxTx (traffic since reboot).
+			// Set SessionStartRxTx = currRxTx so next tick starts clean.
+			user.TotalBytes += currRxTx
+			user.SessionStartRxTx = currRxTx
+		} else {
+			delta := currRxTx - user.SessionStartRxTx
+			user.TotalBytes += delta
+			user.SessionStartRxTx = currRxTx
 		}
-
-		delta := currRxTx - user.SessionStartRxTx
-		user.TotalBytes += delta
-		user.SessionStartRxTx = currRxTx
 
 		// Check Limits & Expiration
 		statusChanged := false

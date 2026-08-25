@@ -6,6 +6,18 @@ import (
 	"strings"
 )
 
+// indexTmpl is parsed once at startup to avoid repeated disk I/O on each request.
+var indexTmpl *template.Template
+
+func init() {
+	var err error
+	indexTmpl, err = template.ParseFiles("templates/index.html")
+	if err != nil {
+		// Panic early so the error is visible at startup, not silently on first request.
+		panic("failed to parse templates/index.html: " + err.Error())
+	}
+}
+
 func RegisterRoutes() {
 	// API Routes
 	http.HandleFunc("/api/stats", handleGetStats)
@@ -50,11 +62,7 @@ func RegisterRoutes() {
 			http.NotFound(w, r)
 			return
 		}
-		tmpl, err := template.ParseFiles("templates/index.html")
-		if err != nil {
-			http.Error(w, "Failed to load template", http.StatusInternalServerError)
-			return
-		}
-		tmpl.Execute(w, nil)
+		indexTmpl.Execute(w, nil)
 	})
 }
+

@@ -20,19 +20,16 @@ RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git && \
 # Build Web Panel
 WORKDIR /app
 
-# Copy go.mod first to fetch dependencies (layer cache optimization)
+# Copy go.mod first to leverage Docker layer caching for dependency downloads
 COPY go.mod ./
 
-# Fetch ALL required dependencies (including github.com/google/uuid used in api.go)
-RUN go get modernc.org/sqlite github.com/skip2/go-qrcode github.com/google/uuid && go mod tidy
+# Download all declared dependencies (go.mod now has full require block)
+RUN go mod download
 
 # Copy full source code
 COPY . .
 
-# Re-run tidy to ensure go.sum is complete with all sources present
-RUN go mod tidy
-
-# Compile Go app with CGO disabled (pure Go)
+# Compile Go app with CGO disabled (pure Go SQLite driver)
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o panel .
 
 # Final Stage
@@ -46,6 +43,9 @@ COPY --from=builder /usr/bin/amneziawg-go /usr/bin/amneziawg-go
 COPY --from=builder /usr/bin/awg /usr/bin/awg
 COPY --from=builder /usr/bin/awg-quick /usr/bin/awg-quick
 COPY --from=builder /app/panel /app/panel
+
+# Copy HTML templates (required at runtime by routes.go)
+COPY --from=builder /app/templates /app/templates
 
 # Copy entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh

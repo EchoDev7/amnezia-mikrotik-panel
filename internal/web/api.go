@@ -143,7 +143,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/api/users/")
-	
+
 	var pubKey string
 	err := database.DB.QueryRow("SELECT public_key FROM users WHERE id = ?", id).Scan(&pubKey)
 	if err != nil {
@@ -151,18 +151,19 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Remove from interface
+	// Remove peer from interface immediately
 	service.RemovePeer("awg0", pubKey)
 
-	// Remove from DB
-	_, err = database.DB.Exec("DELETE FROM users WHERE id = ?", id)
+	// Per AG_INSTRUCTIONS: DO NOT delete from SQLite — set status to disabled instead
+	_, err = database.DB.Exec("UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", models.StatusDisabled, id)
 	if err != nil {
-		http.Error(w, "Failed to delete user", http.StatusInternalServerError)
+		http.Error(w, "Failed to disable user", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 }
+
 
 func handleToggleUser(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimPrefix(r.URL.Path, "/api/users/toggle/")
