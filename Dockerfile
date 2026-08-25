@@ -19,13 +19,18 @@ RUN git clone https://github.com/amnezia-vpn/amneziawg-tools.git && \
 
 # Build Web Panel
 WORKDIR /app
+
+# Copy go.mod first to fetch dependencies (layer cache optimization)
 COPY go.mod ./
-COPY main.go ./
 
-# Fetch dependencies
-RUN go get modernc.org/sqlite github.com/skip2/go-qrcode && go mod tidy
+# Fetch ALL required dependencies (including github.com/google/uuid used in api.go)
+RUN go get modernc.org/sqlite github.com/skip2/go-qrcode github.com/google/uuid && go mod tidy
 
+# Copy full source code
 COPY . .
+
+# Re-run tidy to ensure go.sum is complete with all sources present
+RUN go mod tidy
 
 # Compile Go app with CGO disabled (pure Go)
 RUN CGO_ENABLED=0 go build -ldflags="-w -s" -o panel .
