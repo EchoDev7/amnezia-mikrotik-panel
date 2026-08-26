@@ -28,11 +28,11 @@ func handleGetStats(w http.ResponseWriter, r *http.Request) {
 
 	err := database.DB.QueryRow(`
 		SELECT 
-			COUNT(*), 
-			SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END),
-			SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END),
-			SUM(CASE WHEN status = 'limited' THEN 1 ELSE 0 END),
-			SUM(total_bytes)
+			COALESCE(COUNT(*), 0), 
+			COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(CASE WHEN status = 'limited' THEN 1 ELSE 0 END), 0),
+			COALESCE(SUM(total_bytes), 0)
 		FROM users
 	`).Scan(&stats.TotalUsers, &stats.ActiveUsers, &stats.ExpiredUsers, &stats.LimitedUsers, &stats.TotalBytes)
 
